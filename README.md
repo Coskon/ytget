@@ -8,7 +8,7 @@ Also works as a command-line extractor/downloader.
 
 You can install `ytget` using pip:
 
-```bash
+```console
 pip install ytget
 ```
 ---
@@ -72,17 +72,17 @@ for result in results:
 
 ### Command-line
 For more detailed information, use:
-```bash
+```console
 ytget --help
 ```
 
 Example 1 - Downloading a video and printing its title and url:
-```bash
+```console
 ytget https://www.youtube.com/watch?v=dQw4w9WgXcQ --print title url
 ```
 
 Example 2 - Searching for a query, without downloading get the data of all the videos and write it to a json file:
-```bash
+```console
 ytget "never gonna give you up" --search --skip-download --print all --write-to-json
 ```
 ---
@@ -92,9 +92,9 @@ ytget "never gonna give you up" --search --skip-download --print all --write-to-
 - Allow some way to download livestreams (fractions).
 - Make user input download speed in MB/s and not using chunk size.
 
-### Repository
+### PyPi
 
-The source code is available on [GitHub](https://github.com/Coskon/ytget).
+You can check the [PyPi](https://pypi.org/project/ytget/0.1.0/) page of the package.
 
 ### License
 
