@@ -134,7 +134,7 @@ ytget "https://www.youtube.com/playlist?list=PLd9auH4JIHvupoMgW5YfOjqtj6Lih0MKw"
 
 ### Repository
 
-The source code is available on [GitHub](https://github.com/Coskon/ytget).
+You can check the [PyPi](https://pypi.org/project/ytget) page of the package.
 
 ### License
 
