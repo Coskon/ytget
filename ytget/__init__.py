@@ -11,7 +11,7 @@ __title__ = "ytget"
 __author__ = "Cosk"
 __license__ = "MIT"
 
-from ytget.__main__ import Video, Search, Playlist
+from ytget.__main__ import Video, Search, Playlist, Fetch
 
 from . import console
 from . import exceptions

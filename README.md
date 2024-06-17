@@ -8,14 +8,14 @@ Also works as a command-line extractor/downloader.
 
 You can install `ytget` using pip:
 
-```console
+```bash
 pip install ytget
 ```
 ---
 ## Features
 
 - Simple use.
-- Quick download and info extraction of youtube videos.
+- Quick download and info extraction of youtube videos and playlists.
 - Quick youtube search.
 - Access to age restricted videos without login.
 - Access to your private videos logging into your account.
@@ -70,31 +70,71 @@ for result in results:
     print(result['title'], result['url'])
 ```
 
+Get information from a playlist:
+```python
+from ytget import Playlist, Fetch
+
+# Get the complete information of all videos
+playlist = Playlist("https://www.youtube.com/watch?v=9OFpfTd0EIs&list=PLd9auH4JIHvupoMgW5YfOjqtj6Lih0MKw")
+
+# Download all
+playlist.download()
+
+for video in playlist:
+    print(video.get('title'), video.get('url'))
+
+    
+# Instead of downloading directly, you can do something with the videos before
+videos = playlist.videos
+
+for video in videos:
+    # Download videos starting with the letter a
+    if video.title.lower().startswith('a'):
+        video.download()
+
+        
+# If you want to be the most efficient, get only the initial data of each video
+videos_info = list(filter(lambda x: x.get('title').lower().startswith('b'), playlist.videos_info))
+
+videos_to_download = Fetch(videos_info)
+for video in videos_to_download:
+    video.download()
+```
+
 ### Command-line
 For more detailed information, use:
-```console
+```bash
 ytget --help
 ```
 
 Example 1 - Downloading a video and printing its title and url:
-```console
+```bash
 ytget https://www.youtube.com/watch?v=dQw4w9WgXcQ --print title url
 ```
 
 Example 2 - Searching for a query, without downloading get the data of all the videos and write it to a json file:
-```console
+```bash
 ytget "never gonna give you up" --search --skip-download --print all --write-to-json
+```
+
+Example 3 - Get playlist info (with a maximum of 150 videos) and write to json file their titles, urls and ids:
+```bash
+ytget "https://www.youtube.com/playlist?list=PLd9auH4JIHvupoMgW5YfOjqtj6Lih0MKw" --max-length 150 --print title url video_id --skip-download --write-to-json
 ```
 ---
 ### To Do
-- Add playlist support.
+- ~~Add playlist support.~~
 - Add channels support.
 - Allow some way to download livestreams (fractions).
 - Make user input download speed in MB/s and not using chunk size.
 
-### PyPi
+### Known issues
+- Issues related to downloading age restricted videos with and without logging in.
+- When downloading some specific formats the result might be "corrupted". For now this can be fixed by enabling "force_ffmpeg".
 
-You can check the [PyPi](https://pypi.org/project/ytget/0.1.0/) page of the package.
+### Repository
+
+The source code is available on [GitHub](https://github.com/Coskon/ytget).
 
 ### License
 

@@ -6,11 +6,32 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
+from .out_colors import (_dim_yellow, _dim_cyan, _green)
+from .exceptions import *
+
 CACHE_DIR = pathlib.Path(__file__).parent.resolve() / '__cache__'
 ACCESS_TOKEN_DIR = os.path.join(CACHE_DIR, 'access_token.json')
 CLIENT_ID = '861556708454-d6dlm3lh05idd8npek18k6be8ba3oc68.apps.googleusercontent.com'
 CLIENT_SECRET = 'SboVhoG9s0rNafixCSGGKXAT'
 CLIENT_INFO = {
+    "android_embed": {
+        "payload": {
+            "context": {
+                "client": {
+                    "clientName": "ANDROID_EMBEDDED_PLAYER",
+                    "clientVersion": "19.09.37",
+                    "androidSdkVersion": 30,
+                }
+            },
+            "contentCheckOk": True,
+            "racyCheckOk": True
+        },
+        "headers": {
+            "Accept-Language": "en-us,en;q=0.5",
+            "X-YouTube-Client-Name": "55",
+            "X-YouTube-Client-Version": "19.09.37",
+        }
+    },
     "android_music": {
         "payload": {
             "context": {
@@ -25,6 +46,7 @@ CLIENT_INFO = {
         },
         "headers": {
             "User-Agent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36",
+            "Accept-Language": "en-us,en;q=0.5",
             "Origin": "https://music.youtube.com",
             "X-Youtube-Client-Name": "67",
             "X-Youtube-Client-Version": "1.20240610.01.00",
@@ -39,13 +61,32 @@ CLIENT_INFO = {
                     "clientVersion": "2.0",
                 },
             },
-            'racyCheckOk': True,
-            'contentCheckOk': True
+            "racyCheckOk": True,
+            "contentCheckOk": True
         },
         "headers": {
+            "Accept-Language": "en-us,en;q=0.5",
             "X-YouTube-Client-Name": "85",
             "X-YouTube-Client-Version": "2.0",
             "Origin": "https://www.youtube.com"
+        }
+    },
+    "ios": {
+        "payload": {
+            "context": {
+                "client": {
+                    "clientName": "IOS",
+                    "clientVersion": "19.09.3",
+                }
+            },
+            "contentCheckOk": True,
+            "racyCheckOk": True
+        },
+        "headers": {
+            "Accept-Language": "en-us,en;q=0.5",
+            "X-YouTube-Client-Name": "5",
+            "X-YouTube-Client-Version": "19.09.3",
+            "Origin": "https://www.youtube.com",
         }
     },
     "android": {
@@ -63,6 +104,7 @@ CLIENT_INFO = {
         },
         "headers": {
             "User-Agent": "Mozilla/5.0 (Linux; U; Android 4.0.2; en-us; Galaxy Nexus Build/ICL53F) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30",
+            "Accept-Language": "en-us,en;q=0.5",
             "Origin": "https://m.youtube.com",
             "X-Youtube-Client-Name": "2",
             "X-Youtube-Client-Version": "2.20240612.01.00",
@@ -82,6 +124,7 @@ CLIENT_INFO = {
         },
         "headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "Accept-Language": "en-us,en;q=0.5",
             "Origin": "https://studio.youtube.com",
             "X-Youtube-Client-Name": "62",
             "X-Youtube-Client-Version": "1.20240612.00.00",
@@ -101,6 +144,7 @@ CLIENT_INFO = {
         },
         "headers": {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+            "Accept-Language": "en-us,en;q=0.5",
             "Origin": "https://www.youtube.com",
             "X-Youtube-Client-Name": "1",
             "X-Youtube-Client-Version": "2.20240613.01.00",
@@ -108,6 +152,23 @@ CLIENT_INFO = {
             "Cache-Control": "max-age=0"
         }
     },
+    "ios_embed": {
+            "payload": {
+                "context": {
+                    "client": {
+                        "clientName": "IOS_MESSAGES_EXTENSION",
+                        "clientVersion": "19.09.3",
+                    }
+                },
+                "contentCheckOk": True,
+                "racyCheckOk": True
+            },
+            "headers": {
+                "Accept-Language": "en-us,en;q=0.5",
+                "X-YouTube-Client-Name": "66",
+                "X-YouTube-Client-Version": "19.09.3",
+            }
+        },
 }
 AVAILABLE_CLIENTS = list(CLIENT_INFO.keys())
 
@@ -124,6 +185,13 @@ LOWEST_KEYWORDS = {'worst', 'lowest', 'least', 'bad'}
 LOW_KEYWORDS = {'low', 'poor'}
 MEDIUM_KEYWORDS = {'med', 'mid', 'medium', 'normal'}
 HIGH_KEYWORDS = {'high', 'good'}
+
+_short_form_dict = {
+    'k': 1000, 'm': 1000000, 'b': 1000000000, 't': 1000000000000
+}
+_short_form_suffixes = ['', 'K', 'M', 'B', 'T']
+
+MAX_THREADS = os.cpu_count()
 
 
 def _format_date(date, format_type):
@@ -146,6 +214,7 @@ def _format_title(title: str):
 
 
 def format_seconds(seconds):
+    if seconds is None: return
     hours, remainder = divmod(seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     if hours == 0:
@@ -155,7 +224,8 @@ def format_seconds(seconds):
 
 
 def _format_views(views, replace_character=" "):
-    if views.isnumeric(): return views
+    if not views.isnumeric():
+        return views
     views = views[::-1]
     return replace_character.join([views[i:i + 3] for i in range(0, len(views), 3)])[::-1]
 
@@ -215,6 +285,12 @@ def _is_valid_yt_url(query):
     return False, None
 
 
+def _is_valid_playlist_url(url):
+    yt_playlist_match = re.search(r"(?:https?:\/\/(?:www\.|m\.)?youtube\.com\/.*[?&]list=|https?:\/\/youtu\.be\/)([a-zA-Z0-9_-]*)", url)
+    if yt_playlist_match:
+        return yt_playlist_match.group(1)
+
+
 def _convert_captions(captions_url):
     soup = BeautifulSoup(requests.get(captions_url).text, 'html.parser')
     transcript = soup.find_all('text')
@@ -224,11 +300,68 @@ def _convert_captions(captions_url):
         timestamp = text.get('start')
         duration = text.get('dur')
         content = text.text
+        dur = float(duration) if duration is not None else None
         data.append({
             'timestamp': float(timestamp),
             'ftimestamp': format_seconds(float(timestamp)),
-            'duration': float(duration),
-            'fduration': format_seconds(float(duration)),
+            'duration': dur,
+            'fduration': format_seconds(dur),
             'text': content
         })
     return data
+
+
+def _process_error(er_type, data, ignore_errors, ignore_warnings):
+    is_fatal = data.get('is_fatal')
+    if ignore_errors and not is_fatal:
+        _send_warning_message(data.get('message'), _send_warning_message)
+    else:
+        if er_type == "search":
+            raise SearchError(query=data.get('query'))
+        elif er_type == "extract":
+            raise ExtractError(url=data.get('url'), reason=data.get('reason'), extract_type=data.get('extract_type'))
+        elif er_type == "download":
+            raise DownloadError(url=data.get('url'), reason=data.get('reason'))
+        elif er_type == "forbidden":
+            raise ForbiddenError(url=data.get('url'))
+        elif er_type == "id":
+            raise IdError(url=data.get('url'))
+
+
+def _send_warning_message(message, ignore_warnings):
+    if not ignore_warnings:
+        print(_dim_yellow("[WARNING]: " + message))
+
+
+def _send_info_message(message, verbose, ignore_verbose=False):
+    if verbose or ignore_verbose:
+        print(_dim_cyan("[INFO]: " + message))
+
+
+def _send_success_message(message, verbose):
+    if verbose:
+        print(_green("[SUCCESS]: " + message))
+
+
+def _from_short_number(number_str):
+    number_str = number_str.replace(' ', '')
+    if number_str.isnumeric(): return int(number_str)
+    if not number_str: return 0
+    number, mult = float(number_str[:-1]), number_str.lower()[-1]
+    return int(number*_short_form_dict.get(mult, 1))
+
+
+def _to_short_number(number):
+    i = 0
+    while number >= 1000 and i < len(_short_form_suffixes)-1:
+        i += 1
+        number /= 1000
+    return f"{number:.2f}{_short_form_suffixes[i]}"
+
+
+def delete_cache():
+    if os.path.exists(ACCESS_TOKEN_DIR):
+        os.remove(ACCESS_TOKEN_DIR)
+        _send_success_message("Removed OAuth cache.", True)
+    else:
+        _send_warning_message("Couldn't find cache to remove.", False)
