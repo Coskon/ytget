@@ -46,10 +46,10 @@ video.download()
 video.download(path="downloads/", quality="med", only_audio=True)
 ```
 
-You can also search for a query and get the information of all the videos obtained:
+You can also search for a query and get the information of all the videos obtained with the `Search` object:
 ```python
-from ytget import Search
-from ytget.utils import format_seconds
+from ytget import Search, Download
+from ytget.utils import formatted_to_seconds
 
 # Get the complete information of all videos
 results = Search("never gonna give you up", get_duration_formatted=False).results
@@ -57,22 +57,19 @@ results = Search("never gonna give you up", get_duration_formatted=False).result
 # Download all
 results.download()
 
-for result in results:
-    # Only download if the video is less than 3 minutes long
-    if result.duration < format_seconds('3:00'):
-        result.download(quality="best", only_video=True, target_fps=30)
+# Or do something with the results before downloading
+filtered_results = list(filter(lambda x: x.duration < formatted_to_seconds('3:00'), results))
+Download(filtered_results, quality="best", only_video=True, target_fps=30)
 
-
-# Get simplified information (in case you need speed and don't need to download)
+# Get simplified information (in case you need speed and don't need to download/get the stream urls)
 results = Search("never gonna give you up", get_simple=True).results
-
 for result in results:
     print(result['title'], result['url'])
 ```
 
-Get information from a playlist:
+Get information from a playlist with the `Playlist` object:
 ```python
-from ytget import Playlist, Fetch
+from ytget import Playlist, Fetch, Download
 
 # Get the complete information of all videos
 playlist = Playlist("https://www.youtube.com/watch?v=9OFpfTd0EIs&list=PLd9auH4JIHvupoMgW5YfOjqtj6Lih0MKw")
@@ -83,23 +80,16 @@ playlist.download()
 for video in playlist:
     print(video.get('title'), video.get('url'))
 
-    
 # Instead of downloading directly, you can do something with the videos before
-videos = playlist.videos
-
-for video in videos:
-    # Download videos starting with the letter a
-    if video.title.lower().startswith('a'):
-        video.download()
-
+videos = list(filter(lambda x: x.title.lower().startswith('a'), playlist.videos))
+Download(videos)
         
 # If you want to be the most efficient, get only the initial data of each video
 videos_info = list(filter(lambda x: x.get('title').lower().startswith('b'), playlist.videos_info))
-
-videos_to_download = Fetch(videos_info)
-for video in videos_to_download:
-    video.download()
+Download(Fetch(videos_info))
 ```
+
+And (as shown in the previous examples) you can also use useful objects like `Fetch` and `Download`, and functions like `formatted_to_seconds`, `format_seconds` and `delete_cache` (among others) to make it even easier for you.
 
 ### Command-line
 For more detailed information, use:
@@ -112,9 +102,9 @@ Example 1 - Downloading a video and printing its title and url:
 ytget https://www.youtube.com/watch?v=dQw4w9WgXcQ --print title url
 ```
 
-Example 2 - Searching for a query, without downloading get the data of all the videos and write it to a json file:
+Example 2 - Searching for a query for videos under 5 minutes long, and without downloading get the data of all the videos and write it to a json file:
 ```bash
-ytget "never gonna give you up" --search --skip-download --print all --write-to-json
+ytget "never gonna give you up" --max-duration 5:00 --search --skip-download --print all --write-to-json
 ```
 
 Example 3 - Get playlist info (with a maximum of 150 videos) and write to json file their titles, urls and ids:
@@ -129,12 +119,12 @@ ytget "https://www.youtube.com/playlist?list=PLd9auH4JIHvupoMgW5YfOjqtj6Lih0MKw"
 - Make user input download speed in MB/s and not using chunk size.
 
 ### Known issues
-- Issues related to downloading age restricted videos with and without logging in.
+- Issues related to downloading age restricted videos without logging in.
 - When downloading some specific formats the result might be "corrupted". For now this can be fixed by enabling "force_ffmpeg".
 
 ### Repository
 
-You can check the [PyPi](https://pypi.org/project/ytget) page of the package.
+The source code is available on [GitHub](https://github.com/Coskon/ytget).
 
 ### License
 

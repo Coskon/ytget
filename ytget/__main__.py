@@ -1,4 +1,3 @@
-import io
 import os
 import json
 import re
@@ -8,7 +7,7 @@ import warnings
 import requests
 
 from concurrent.futures import ThreadPoolExecutor
-from typing import List, Union, Tuple, Dict, Iterable
+from typing import List, Dict, Iterable
 
 from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
 from colorama import just_fix_windows_console
@@ -18,8 +17,8 @@ from .utils import (CACHE_DIR, ACCESS_TOKEN_DIR, CLIENT_ID, CLIENT_SECRET, CLIEN
                     YOUTUBE_HEADERS, LOWEST_KEYWORDS, LOW_KEYWORDS, MEDIUM_KEYWORDS, HIGH_KEYWORDS,
                     _format_date, _format_views, format_seconds, formatted_to_seconds, _format_title,
                     _get_chapters, _get_channel_picture, _is_valid_yt_url, _convert_captions, _send_warning_message,
-                    _send_info_message, _send_success_message, _process_error, _from_short_number, _to_short_number)
-from .out_colors import (_red, _dim_cyan, _dim_yellow, _green)
+                    _send_info_message, _send_success_message, _process_error, _from_short_number, _combine_av)
+from .out_colors import _dim_cyan
 
 
 warnings.filterwarnings('ignore', category=XMLParsedAsHTMLWarning)
@@ -369,7 +368,7 @@ class Video:
 
         if len(stream_urls) > 1:
             exts2 = [itags[0].replace(":", "")+".", itags[1].replace(":", "")+"."]
-            self._combine_av(output_path+exts2[0]+exts[0], output_path+exts2[1]+exts[1], output_path[:-1]+"."+exts[1])
+            _combine_av(output_path+exts2[0]+exts[0], output_path+exts2[1]+exts[1], output_path[:-1]+"."+exts[1], verbose=self._verbose)
             if not keep:
                 if os.path.exists(output_path+exts2[0]+exts[0]):
                     os.remove(output_path+exts2[0]+exts[0])
@@ -423,15 +422,6 @@ class Video:
 
         if os.path.exists(raw_path):
             os.remove(raw_path)
-
-    @staticmethod
-    def _combine_av(audio_path, video_path, output_path):
-        try:
-            # Change to pbar
-            _send_info_message("Converting...", self._verbose)
-            subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-i', video_path, '-i', audio_path, '-c:v', 'copy', '-c:a', 'aac', output_path])
-        except Exception as e:
-            print(_red(e))
 
     def _get_stream(self, quality="best", only_audio=False, only_video=False, target_fps=-1, itag=-1):
 
@@ -651,7 +641,6 @@ class Video:
 
         req = requests.post(f'https://www.youtube.com/youtubei/v1/player?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8',
                             headers=headers, json=payload)
-
 
         if req.status_code == 200:
             data = req.json()
@@ -895,15 +884,15 @@ class Search:
         if not self.video_urls:
             _process_error(er_type="search", data={'query': query, 'is_fatal': True},
                            ignore_errors=self._ignore_errors, ignore_warnings=self._ignore_warnings)
-        self._get_simple = get_simple
-        if self._get_simple:
-            return
 
+        self._get_simple = get_simple
         self._kwargs = kwargs
         self._download_kwargs = {}
         self._threads = threads
         self._use_threads = use_threads
-        self.results = Fetch(iterable=self.video_urls, use_threads=self._use_threads, threads=self._threads, kwargs=self._kwargs)
+
+        if not self._get_simple:
+            self.results = Fetch(iterable=self.video_urls, use_threads=self._use_threads, threads=self._threads, **self._kwargs)
 
     def download(self, **download_kwargs):
         """
@@ -917,24 +906,7 @@ class Search:
                            ignore_errors=self._ignore_errors, ignore_warnings=self._ignore_warnings)
             return
 
-        self._pbar = tqdm(total=len(self.results), unit='videos', desc="Downloading videos")
-
-        if self._use_threads:
-            with ThreadPoolExecutor(max_workers=self._threads) as executor:
-                executor.map(self._download_vids, self.results, [i for i in range(len(self.results))])
-        else:
-            for vid in self.results:
-                vid.download(**self._download_kwargs)
-                self._pbar.update(1)
-
-        self._pbar.close()
-
-    def _download_vids(self, vid, number):
-        self._download_kwargs.update({
-            "_raw_number": number
-        })
-        vid.download(**self._download_kwargs)
-        self._pbar.update(1)
+        Download(self.results, use_threads=self._use_threads, threads=self._threads, **self._download_kwargs)
 
     def _search_query(self):
         url = "https://www.youtube.com/results?search_query=" + self._query
@@ -956,7 +928,6 @@ class Search:
                                 data={'url': self.url, 'extract_type': 'video info', 'is_fatal': True,
                                       'reason': "Couldn't get json data"},
                            ignore_errors=self._ignore_errors, ignore_warnings=self._ignore_warnings)
-
         videos_info = []
         for vid in contents:
             if 'videoRenderer' in vid:
@@ -1098,17 +1069,7 @@ class Playlist:
                            ignore_errors=self._ignore_errors, ignore_warnings=self._ignore_warnings)
             return
 
-        self._pbar = tqdm(total=self.length, unit='videos', desc="Downloading videos")
-
-        if self._use_threads:
-            with ThreadPoolExecutor(max_workers=self._threads) as executor:
-                executor.map(self._download_vids, vids, [i for i in range(len(vids))])
-        else:
-            for vid in vids:
-                vid.download(**self._download_kwargs)
-                self._pbar.update(1)
-
-        self._pbar.close()
+        Download(vids, use_threads=self._use_threads, threads=self._threads, **self._download_kwargs)
 
     @property
     def videos(self):
@@ -1117,13 +1078,6 @@ class Playlist:
     @videos.setter
     def videos(self):
         self.videos = []
-
-    def _download_vids(self, vid, number):
-        self._download_kwargs.update({
-            "_raw_number": number
-        })
-        vid.download(**self._download_kwargs)
-        self._pbar.update(1)
 
     def _extract_videos(self):
         session = requests.Session()
@@ -1367,7 +1321,7 @@ class Fetch:
     """
     Get information of videos from a list of urls or dicts with video info.
     """
-    def __new__(cls, iterable: Union[Iterable[str | Dict]], use_threads: bool = True, threads: int = os.cpu_count()//2, **kwargs) -> List[Video]:
+    def __new__(cls, iterable: Iterable[str | Dict], use_threads: bool = True, threads: int = os.cpu_count()//2, **kwargs) -> List[Video]:
         """
         Get information of videos from a list of urls or dicts with video info.
 
@@ -1392,3 +1346,39 @@ class Fetch:
                 instance.videos.append(Video(url, **kwargs))
 
         return instance.videos
+
+
+class Download:
+    """
+    Download videos from a list.
+    """
+    def __init__(self, iterable: Iterable[Video], use_threads: bool = True, threads: int = os.cpu_count()//2,
+                 **download_kwargs) -> None:
+        """
+        Download videos from a list.
+
+        :param iterable: List of videos to download
+        :param use_threads: Use parallel processing to download
+        :param threads: Amount of threads to use
+        :param download_kwargs: Inherited from `Video` class method `download` args
+        """
+        self._kwargs = download_kwargs
+        self._kwargs.setdefault("_show_bar", False)
+
+        self._pbar = tqdm(total=len(iterable), unit='videos', desc="Downloading videos")
+        if use_threads:
+            with ThreadPoolExecutor(max_workers=threads) as executor:
+                executor.map(self._download_vid, iterable, [i for i in range(len(iterable))])
+        else:
+            for i, video in enumerate(iterable):
+                self._download_vid(video, i)
+
+        self._pbar.close()
+
+    def _download_vid(self, video, number):
+        self._kwargs.update({
+            "_raw_number": number
+        })
+        video.download(**self._kwargs)
+        self._pbar.update(1)
+

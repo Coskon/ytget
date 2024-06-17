@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='ytget',
-    version='0.2.1',
+    version='0.2.3',
     author='Cosk',
     description='Easily get data and download youtube videos, focused on speed and simplicity.',
     long_description=open('README.md').read(),

@@ -2,11 +2,12 @@ import pathlib
 import os
 import re
 import requests
+import subprocess
 
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from .out_colors import (_dim_yellow, _dim_cyan, _green)
+from .out_colors import (_dim_yellow, _dim_cyan, _green, _red)
 from .exceptions import *
 
 CACHE_DIR = pathlib.Path(__file__).parent.resolve() / '__cache__'
@@ -213,7 +214,10 @@ def _format_title(title: str):
     return re.sub(r'[<>:"/\\|?*]', '_', str(title))
 
 
-def format_seconds(seconds):
+def format_seconds(seconds: int):
+    """
+    Convert seconds to formatted time (HH:MM:SS)
+    """
     if seconds is None: return
     hours, remainder = divmod(seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
@@ -231,18 +235,24 @@ def _format_views(views, replace_character=" "):
 
 
 def formatted_to_seconds(time_str):
+    """
+    Convert formatted time (HH:MM:SS) to seconds
+    """
     if not time_str: return
-    time_components = time_str.split(':')
-    num_components = len(time_components)
-    hours = 0
-    if num_components == 3:
-        hours = int(time_components[0])
-        minutes = int(time_components[1])
-        seconds = int(time_components[2])
-    else:
-        minutes = int(time_components[0])
-        seconds = int(time_components[1])
-    return hours * 3600 + minutes * 60 + seconds
+    try:
+        time_components = time_str.split(':')
+        num_components = len(time_components)
+        hours = 0
+        if num_components == 3:
+            hours = int(time_components[0])
+            minutes = int(time_components[1])
+            seconds = int(time_components[2])
+        else:
+            minutes = int(time_components[0])
+            seconds = int(time_components[1])
+        return hours * 3600 + minutes * 60 + seconds
+    except:
+        return
 
 
 def _get_chapters(desc):
@@ -360,8 +370,20 @@ def _to_short_number(number):
 
 
 def delete_cache():
+    """
+    Delete OAuth cache, useful to "refresh" the existing cache
+    """
     if os.path.exists(ACCESS_TOKEN_DIR):
         os.remove(ACCESS_TOKEN_DIR)
         _send_success_message("Removed OAuth cache.", True)
     else:
         _send_warning_message("Couldn't find cache to remove.", False)
+
+
+def _combine_av(audio_path, video_path, output_path, verbose):
+    try:
+        # Change to pbar
+        _send_info_message("Converting...", verbose)
+        subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', video_path, '-i', audio_path, '-c:v', 'copy', '-c:a', 'aac', output_path])
+    except Exception as e:
+        print(_red(e))

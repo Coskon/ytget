@@ -1,10 +1,12 @@
 import argparse
 import os
 import json
+import sys
 
+from .__init__ import __version__
 from .__main__ import Video, Search, Playlist
 from .out_colors import (_dim_cyan, _red)
-from .utils import (_send_warning_message, _send_info_message, _send_success_message)
+from .utils import (_send_warning_message, _send_info_message, _send_success_message, formatted_to_seconds)
 
 
 def cmd_parser():
@@ -14,7 +16,7 @@ def cmd_parser():
     )
 
     general_group = parser.add_argument_group('general')
-    json_group = parser.add_argument_group('json')
+    files = parser.add_argument_group('files')
     search_group = parser.add_argument_group('search params')
     video_group = parser.add_argument_group('video params')
     download_group = parser.add_argument_group('downloads')
@@ -28,15 +30,17 @@ def cmd_parser():
     general_group.add_argument('-y', action='store_true', help='Automatically confirm on prompt', default=False)
     general_group.add_argument('-s', '--skip-download', action='store_true', help='Don\'t download the stream', default=False)
     general_group.add_argument('-v', '--verbose', action='store_true', help='Show info messages', default=False)
+    general_group.add_argument('--version', action='store_true', help='Show current version installed', default=False)
 
-    # json
-    json_group.add_argument('--write-to-json', action='store_true', help='Write the info specified on "--print" to a json', default=False)
-    json_group.add_argument('--json-path', type=str, metavar='PATH', help='Output path for json files', default=".")
+    # external files
+    files.add_argument('--write-to-json', action='store_true', help='Write the info specified on "--print" to a json', default=False)
+    files.add_argument('--json-path', type=str, metavar='PATH', help='Output path for json files', default=".")
+    #files.add_argument('--read', type=str, metavar='PATH', help='Read URLs/queries from .txt or .json file', default="null.null")
 
     # search related
     search_group.add_argument('--search', action='store_true', help='Shows results for the query instead of downloading', default=False)
     search_group.add_argument('--max-results', type=int, help='Max amount of videos to fetch from the result', default=-1)
-    search_group.add_argument('--max-duration', type=int, metavar='SECONDS', help='Max duration a video can have when searching or in a playlist to fetch it', default=-1)
+    search_group.add_argument('--max-duration', type=str, metavar='SECONDS/TIME', help='Max duration a video can have when searching or in a playlist to fetch it, in seconds or HH:MM:SS', default='-1')
 
     # video class related
     video_group.add_argument('--use-login', action='store_true', help='Login into youtube', default=False)
@@ -76,9 +80,9 @@ def cmd_parser():
     config_group.add_argument('--disable-threads', action='store_true', help='Disable parallel processing on batch processes', default=False)
     config_group.add_argument('--threads', type=int, help='Amount of threads to use on batch processes', default=os.cpu_count() // 2)
 
-    # extra
-    # --fetch-from-file (usa Fetch para agarrar datos de un .txt o .json, automaticamente detectar ciertos modos: separados por \n, ;, etc)
-    # hacer que Fetch pueda usar sin threads
+    if "--version" in sys.argv:
+        _send_info_message(f"Current version installed: {__version__}", True)
+        return
 
     args = parser.parse_args()
 
@@ -128,10 +132,18 @@ def cmd_parser():
             print_dict[arg] = True
         if failed_prints:
             _send_warning_message("Invalid print arguments: "+", ".join(failed_prints), False)
-
+    max_duration = args.max_duration
+    try:
+        max_duration = int(max_duration)
+    except:
+        try:
+            max_duration = int(formatted_to_seconds(max_duration))
+        except:
+            _send_warning_message("Invalid max duration format, ignoring...", False)
+            max_duration = -1
     if args.search:
         search_obj = Search(args.query, get_simple=False, use_threads=not args.disable_threads,  threads=args.threads,
-                            max_duration=args.max_duration, max_results=args.max_results, **argument_dict)
+                            max_duration=max_duration, max_results=args.max_results, **argument_dict)
         results = search_obj.results
         for video in results:
             new_line = False
@@ -151,7 +163,7 @@ def cmd_parser():
     else:
         is_playlist = False
         def _playlist_fetch():
-            playlist = Playlist(args.query, max_length=args.max_length, max_duration=args.max_duration,
+            playlist = Playlist(args.query, max_length=args.max_length, max_duration=max_duration,
                                 use_threads=not args.disable_threads, threads=args.threads,
                                 format_duration=not args.no_format_total_duration,
                                 use_login_playlist=args.use_login_playlist, **argument_dict)
