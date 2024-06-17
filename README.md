@@ -122,9 +122,9 @@ ytget "https://www.youtube.com/playlist?list=PLd9auH4JIHvupoMgW5YfOjqtj6Lih0MKw"
 - Issues related to downloading age restricted videos without logging in.
 - When downloading some specific formats the result might be "corrupted". For now this can be fixed by enabling "force_ffmpeg".
 
-### Repository
+### PyPi
 
-The source code is available on [GitHub](https://github.com/Coskon/ytget).
+You can check the [PyPi](https://pypi.org/project/ytget) page of the package.
 
 ### License
 
