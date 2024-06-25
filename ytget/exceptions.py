@@ -34,3 +34,9 @@ class NoQueryError(Exception):
         self.error_message = f"No query provided."
         super().__init__(self.error_message)
 
+
+class GenericError(Exception):
+    def __init__(self, url, error):
+        self.error_message = f"Error with `{url}`: {error}"
+        super().__init__(self.error_message)
+

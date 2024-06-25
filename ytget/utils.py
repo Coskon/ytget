@@ -7,11 +7,15 @@ import subprocess
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from .out_colors import (_dim_yellow, _dim_cyan, _green, _red)
+from .out_colors import (_dim_yellow, _dim_cyan, _green, _dim_red)
 from .exceptions import *
 
 CACHE_DIR = pathlib.Path(__file__).parent.resolve() / '__cache__'
 ACCESS_TOKEN_DIR = os.path.join(CACHE_DIR, 'access_token.json')
+
+BAR_COLOR = '#228B22'
+DEFAULT_THREADS = os.cpu_count()//2
+
 CLIENT_ID = '861556708454-d6dlm3lh05idd8npek18k6be8ba3oc68.apps.googleusercontent.com'
 CLIENT_SECRET = 'SboVhoG9s0rNafixCSGGKXAT'
 CLIENT_INFO = {
@@ -21,7 +25,7 @@ CLIENT_INFO = {
                 "client": {
                     "clientName": "ANDROID_EMBEDDED_PLAYER",
                     "clientVersion": "19.09.37",
-                    "androidSdkVersion": 30,
+                    "androidSdkVersion": 31,
                 }
             },
             "contentCheckOk": True,
@@ -29,9 +33,10 @@ CLIENT_INFO = {
         },
         "headers": {
             "Accept-Language": "en-us,en;q=0.5",
-            "X-YouTube-Client-Name": "55",
-            "X-YouTube-Client-Version": "19.09.37",
-        }
+            "X-Youtube-Client-Name": "55",
+            "X-Youtube-Client-Version": "19.09.37",
+        },
+        "api_key": "AIzaSyCjc_pVEDi4qsv5MtC2dMXzpIaDoRFLsxw"
     },
     "android_music": {
         "payload": {
@@ -39,7 +44,7 @@ CLIENT_INFO = {
                 "client": {
                     "clientName": "ANDROID_MUSIC",
                     "clientVersion": "5.16.51",
-                    "androidSdkVersion": 30
+                    "androidSdkVersion": 31
                 }
             },
             "racyCheckOk": True,
@@ -52,14 +57,15 @@ CLIENT_INFO = {
             "X-Youtube-Client-Name": "67",
             "X-Youtube-Client-Version": "1.20240610.01.00",
             "X-Youtube-Device": "cbr=Chrome+Mobile&cbrand=google&cbrver=125.0.0.0&ceng=WebKit&cengver=537.36&cmodel=nexus+5&cos=Android&cosver=6.0&cplatform=MOBILE",
-        }
+        },
+        "api_key": "AIzaSyAOghZGza2MQSZkY_zfZ370N-PUdXEo8AI"
     },
     "tv_embed": {
         "payload": {
             "context": {
                 "client": {
                     "clientName": "TVHTML5_SIMPLY_EMBEDDED_PLAYER",
-                    "clientVersion": "2.0",
+                    "clientVersion": "2.0"
                 },
             },
             "racyCheckOk": True,
@@ -67,10 +73,11 @@ CLIENT_INFO = {
         },
         "headers": {
             "Accept-Language": "en-us,en;q=0.5",
-            "X-YouTube-Client-Name": "85",
-            "X-YouTube-Client-Version": "2.0",
+            "X-Youtube-Client-Name": "85",
+            "X-Youtube-Client-Version": "2.0",
             "Origin": "https://www.youtube.com"
-        }
+        },
+        "api_key": "AIzaSyCjc_pVEDi4qsv5MtC2dMXzpIaDoRFLsxw"
     },
     "ios": {
         "payload": {
@@ -85,10 +92,11 @@ CLIENT_INFO = {
         },
         "headers": {
             "Accept-Language": "en-us,en;q=0.5",
-            "X-YouTube-Client-Name": "5",
-            "X-YouTube-Client-Version": "19.09.3",
+            "X-Youtube-Client-Name": "5",
+            "X-Youtube-Client-Version": "19.09.3",
             "Origin": "https://www.youtube.com",
-        }
+        },
+        "api_key": "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc"
     },
     "android": {
         "payload": {
@@ -96,8 +104,7 @@ CLIENT_INFO = {
                 "client": {
                     "clientName": "ANDROID",
                     "clientVersion": "17.31.35",
-                    "client": "MWEB",
-                    "androidSdkVersion": 30
+                    "androidSdkVersion": 31
                 }
             },
             "racyCheckOk": True,
@@ -110,7 +117,8 @@ CLIENT_INFO = {
             "X-Youtube-Client-Name": "2",
             "X-Youtube-Client-Version": "2.20240612.01.00",
             "X-Youtube-Device": "cbr=Chrome+Mobile&cbrand=samsung&cbrver=116.0.0.0&ceng=WebKit&cengver=537.36&cmodel=sm-g981b&cos=Android&cosver=13&cplatform=MOBILE",
-        }
+        },
+        "api_key": "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w"
     },
     "android_creator": {
         "payload": {
@@ -130,7 +138,8 @@ CLIENT_INFO = {
             "X-Youtube-Client-Name": "62",
             "X-Youtube-Client-Version": "1.20240612.00.00",
             "X-Youtube-Device": "cbr=Chrome+Mobile&cbrand=google&cbrver=125.0.0.0&ceng=WebKit&cengver=537.36&cmodel=nexus+5&cos=Android&cosver=6.0&cplatform=MOBILE",
-        }
+        },
+        "api_key": "AIzaSyD_qjV8zaaUMehtLkrKFgVeSX_Iqbtyws8"
     },
     "web": {
         "payload": {
@@ -151,25 +160,27 @@ CLIENT_INFO = {
             "X-Youtube-Client-Version": "2.20240613.01.00",
             "X-Youtube-Device": "cbr=Chrome&cbrver=125.0.0.0&ceng=WebKit&cengver=537.36&cos=Windows&cosver=10.0&cplatform=DESKTOP",
             "Cache-Control": "max-age=0"
-        }
+        },
+        "api_key": "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8"
     },
     "ios_embed": {
-            "payload": {
-                "context": {
-                    "client": {
-                        "clientName": "IOS_MESSAGES_EXTENSION",
-                        "clientVersion": "19.09.3",
-                    }
-                },
-                "contentCheckOk": True,
-                "racyCheckOk": True
+        "payload": {
+            "context": {
+                "client": {
+                    "clientName": "IOS_MESSAGES_EXTENSION",
+                    "clientVersion": "19.09.3",
+                }
             },
-            "headers": {
-                "Accept-Language": "en-us,en;q=0.5",
-                "X-YouTube-Client-Name": "66",
-                "X-YouTube-Client-Version": "19.09.3",
-            }
+            "contentCheckOk": True,
+            "racyCheckOk": True
         },
+        "headers": {
+            "Accept-Language": "en-us,en;q=0.5",
+            "X-Youtube-Client-Name": "66",
+            "X-Youtube-Client-Version": "19.09.3",
+        },
+        "api_key": "AIzaSyB-63vPrdThhKuerbB2N_l7Kwwcxj6yUAc"
+    },
 }
 AVAILABLE_CLIENTS = list(CLIENT_INFO.keys())
 
@@ -186,6 +197,10 @@ LOWEST_KEYWORDS = {'worst', 'lowest', 'least', 'bad'}
 LOW_KEYWORDS = {'low', 'poor'}
 MEDIUM_KEYWORDS = {'med', 'mid', 'medium', 'normal'}
 HIGH_KEYWORDS = {'high', 'good'}
+
+VIDEO_EXTS = {"mp4", "webm", "mp3", "m4a", "wav", "mpeg", "ogg", "flac", "aac", "m3u8", "3gp", "m4v", "avi", "mkv",
+              "mov", "wmv", "flv", "ts", "vob", "asf", "ogv"}
+VIDEO_EXTS_DOTTED = {"."+ext for ext in VIDEO_EXTS}
 
 _short_form_dict = {
     'k': 1000, 'm': 1000000, 'b': 1000000000, 't': 1000000000000
@@ -232,6 +247,10 @@ def _format_views(views, replace_character=" "):
         return views
     views = views[::-1]
     return replace_character.join([views[i:i + 3] for i in range(0, len(views), 3)])[::-1]
+
+
+def _filter_numbers(input):
+    return ''.join(filter(str.isdigit, input))
 
 
 def formatted_to_seconds(time_str):
@@ -324,18 +343,36 @@ def _convert_captions(captions_url):
 def _process_error(er_type, data, ignore_errors, ignore_warnings):
     is_fatal = data.get('is_fatal')
     if ignore_errors and not is_fatal:
-        _send_warning_message(data.get('message'), _send_warning_message)
+        _send_warning_message(data.get('message'), ignore_warnings)
     else:
+        query_url = data.get('url') if data.get('url') else data.get('query')
+        reason = data.get('reason') if data.get('reason') else None
         if er_type == "search":
-            raise SearchError(query=data.get('query'))
+            _send_error_message(f"Couldn't complete search for `{query_url}`", False)
+            raise SearchError(query=query_url)
         elif er_type == "extract":
-            raise ExtractError(url=data.get('url'), reason=data.get('reason'), extract_type=data.get('extract_type'))
+            extract_type = data.get('extract_type')
+            _send_error_message(f"Couldn't extract {extract_type} for '{query_url}': {reason}.", False)
+            raise ExtractError(url=query_url, reason=reason, extract_type=extract_type)
         elif er_type == "download":
-            raise DownloadError(url=data.get('url'), reason=data.get('reason'))
+            _send_error_message(f"Couldn't download '{query_url}': {reason}.", False)
+            raise DownloadError(url=query_url, reason=reason)
         elif er_type == "forbidden":
-            raise ForbiddenError(url=data.get('url'))
+            _send_error_message(f"Couldn't download '{query_url}': HTTP <403> Forbidden - "
+                                f"You might have reached a ratelimit, try again later or try use_login=False.", False)
+            raise ForbiddenError(url=query_url)
         elif er_type == "id":
-            raise IdError(url=data.get('url'))
+            _send_error_message(f"Couldn't extract id from '{query_url}'.", False)
+            raise IdError(url=query_url)
+        else:
+            error = data.get('error')
+            _send_error_message(f"Error with `{query_url}`: {error}", False)
+            raise GenericError(url=query_url, error=error)
+
+
+def _send_error_message(message, ignore_errors):
+    if not ignore_errors:
+        print(_dim_red("[ERROR]: " + message))
 
 
 def _send_warning_message(message, ignore_warnings):
@@ -343,8 +380,8 @@ def _send_warning_message(message, ignore_warnings):
         print(_dim_yellow("[WARNING]: " + message))
 
 
-def _send_info_message(message, verbose, ignore_verbose=False):
-    if verbose or ignore_verbose:
+def _send_info_message(message, verbose):
+    if verbose:
         print(_dim_cyan("[INFO]: " + message))
 
 
@@ -384,6 +421,7 @@ def _combine_av(audio_path, video_path, output_path, verbose):
     try:
         # Change to pbar
         _send_info_message("Converting...", verbose)
-        subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', video_path, '-i', audio_path, '-c:v', 'copy', '-c:a', 'aac', output_path])
+        subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', video_path, '-i', audio_path,
+                        '-c:v', 'copy', '-c:a', 'aac', output_path])
     except Exception as e:
-        print(_red(e))
+        print(_send_error_message(e, True))

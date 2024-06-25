@@ -11,6 +11,13 @@ You can install `ytget` using pip:
 ```bash
 pip install ytget
 ```
+
+Some videos/formats will need `ffmpeg` to download. You can install it from the [official website](https://ffmpeg.org/download.html) or by running:
+
+```bash
+sudo apt install ffmpeg
+```
+
 ---
 ## Features
 
@@ -91,6 +98,8 @@ Download(Fetch(videos_info))
 
 And (as shown in the previous examples) you can also use useful objects like `Fetch` and `Download`, and functions like `formatted_to_seconds`, `format_seconds` and `delete_cache` (among others) to make it even easier for you.
 
+You can also use the `GenericExtractor` to extract info from various sites, though it's recommended to use a dedicated extractor for each website.
+
 ### Command-line
 For more detailed information, use:
 ```bash
@@ -115,8 +124,8 @@ ytget "https://www.youtube.com/playlist?list=PLd9auH4JIHvupoMgW5YfOjqtj6Lih0MKw"
 ### To Do
 - ~~Add playlist support.~~
 - Add channels support.
-- Allow some way to download livestreams (fractions).
-- Make user input download speed in MB/s and not using chunk size.
+- ~~Allow some way to download livestreams (fractions).~~
+- Allow search for multiple pages.
 
 ### Known issues
 - Issues related to downloading age restricted videos without logging in.
